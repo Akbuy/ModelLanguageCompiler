@@ -1,20 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-
-namespace ModelLanguageCompiler.Model
+﻿namespace ModelLanguageCompiler.Model
 {
     public enum TokenType
     {
         Keyword,
         Identifier,
         Number,
+        HexNumber,
         Operator,
         Delimiter,
         LogicalConstant,
+        Comment,
         Error
     }
 }

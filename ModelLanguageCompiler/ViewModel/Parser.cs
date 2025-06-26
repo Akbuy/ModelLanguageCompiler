@@ -10,14 +10,32 @@ namespace ModelLanguageCompiler.ViewModel
         private readonly List<Token> _tokens = tokens;
         private int _pos = 0;
 
-        private Token Current => _pos < _tokens.Count ? _tokens[_pos] : _tokens[^1];
+        private Token Current => GetNextNonCommentToken();
 
+        private Token GetNextNonCommentToken()
+        {
+            int pos = _pos;
+            while (pos < _tokens.Count && _tokens[pos].Type == TokenType.Comment)
+            {
+                pos++;
+            }
+            return pos < _tokens.Count ? _tokens[pos] : _tokens[^1];
+        }
         private void Match(string expected)
         {
-            if (Current.Value == expected)
+            var current = GetNextNonCommentToken();
+            if (current.Value == expected)
+            {
                 _pos++;
+                while (_pos < _tokens.Count && _tokens[_pos].Type == TokenType.Comment)
+                {
+                    _pos++;
+                }
+            }
             else
-                throw new Exception($"Ожидалось '{expected}', найдено '{Current.Value}' на {Current.Line} строке, {_pos} позиция");
+            {
+                throw new Exception($"Ожидалось '{expected}', найдено '{current.Value}' на {current.Line} строке, {current.Column} позиция");
+            }
         }
 
         public void ParseProgram()
@@ -51,7 +69,14 @@ namespace ModelLanguageCompiler.ViewModel
         private void ParseStatement()
         {
             if (Current.Type == TokenType.Identifier && Peek().Value == ":=")
-                ParseAssignment();
+                if (Peek(2).Value == "to")
+                {
+                    ParseFor();
+                }
+                else
+                {
+                    ParseAssignment();
+                }
             else if (Current.Value == "if")
                 ParseIf();
             else if (Current.Value == "while")
@@ -184,6 +209,7 @@ namespace ModelLanguageCompiler.ViewModel
         {
             if (Current.Type == TokenType.Identifier ||
                 Current.Type == TokenType.Number ||
+                Current.Type == TokenType.HexNumber ||
                 Current.Type == TokenType.LogicalConstant)
             {
                 _pos++;
