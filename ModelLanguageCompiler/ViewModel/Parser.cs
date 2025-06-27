@@ -10,31 +10,18 @@ namespace ModelLanguageCompiler.ViewModel
         private readonly List<Token> _tokens = tokens;
         private int _pos = 0;
 
-        private Token Current => GetNextNonCommentToken();
+        private Token Current => _pos < _tokens.Count ? _tokens[_pos] : _tokens[^1];
 
-        private Token GetNextNonCommentToken()
-        {
-            int pos = _pos;
-            while (pos < _tokens.Count && _tokens[pos].Type == TokenType.Comment)
-            {
-                pos++;
-            }
-            return pos < _tokens.Count ? _tokens[pos] : _tokens[^1];
-        }
         private void Match(string expected)
         {
-            var current = GetNextNonCommentToken();
+            var current = Current;
             if (current.Value == expected)
             {
                 _pos++;
-                while (_pos < _tokens.Count && _tokens[_pos].Type == TokenType.Comment)
-                {
-                    _pos++;
-                }
             }
             else
             {
-                throw new Exception($"Ожидалось '{expected}', найдено '{current.Value}' на {current.Line} строке, {current.Column} позиция");
+                throw new Exception($"Ожидалось '{expected}', найдено '{current.Value}' на {current.Index} строке, {current.TableIndex} позиция");
             }
         }
 
@@ -209,7 +196,6 @@ namespace ModelLanguageCompiler.ViewModel
         {
             if (Current.Type == TokenType.Identifier ||
                 Current.Type == TokenType.Number ||
-                Current.Type == TokenType.HexNumber ||
                 Current.Type == TokenType.LogicalConstant)
             {
                 _pos++;

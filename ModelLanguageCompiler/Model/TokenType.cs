@@ -5,11 +5,9 @@
         Keyword,
         Identifier,
         Number,
-        HexNumber,
         Operator,
         Delimiter,
         LogicalConstant,
-        Comment,
         Error
     }
 }

@@ -1,10 +1,5 @@
 ﻿using ModelLanguageCompiler.Model;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace ModelLanguageCompiler.ViewModel
 {
@@ -16,58 +11,42 @@ namespace ModelLanguageCompiler.ViewModel
         private static readonly string operatorsPattern = @"(!=|==|<=|>=|\|\||&&|:=|[+\-*/<>=])";
         private static readonly string delimitersPattern = @"[{}();,]";
         private static readonly Regex hexNumberRegex = new Regex(@"^[0-9A-Fa-f]+[hH]$");
+        private static readonly Regex binaryNumberRegex = new Regex(@"^[01]+[Bb]$");
+        private static readonly Regex octNumberRegex = new Regex(@"^[0-7]+[Oo]$");
+        private static readonly Regex decNumberRegex = new Regex(@"^[0-10]+[Dd]$");
 
-        public List<Token> Tokenize(string code)
+        public static List<Token> Tokenize(string code, out List<string> numbers, out List<string> ids)
         {
+            numbers = new List<string>();
+            ids = new List<string>();
             var tokens = new List<Token>();
             var lines = code.Split('\n');
-            int currentLine = 1;
             int globalPos = 0;
 
             while (globalPos < code.Length)
             {
                 if (char.IsWhiteSpace(code[globalPos]))
                 {
-                    if (code[globalPos] == '\n') currentLine++;
                     globalPos++;
                     continue;
                 }
 
                 if (globalPos + 1 < code.Length && code[globalPos] == '/' && code[globalPos + 1] == '*')
                 {
-                    int commentStart = globalPos;
-                    int commentLine = currentLine;
-                    int commentColumn = GetColumnNumber(code, commentStart, currentLine);
-
                     globalPos += 2;
 
-                    while (globalPos < code.Length && !(code[globalPos] == '*' &&
-                           globalPos + 1 < code.Length && code[globalPos + 1] == '/'))
+                    while (globalPos < code.Length
+                            && !(code[globalPos] == '*'
+                            && globalPos + 1 < code.Length
+                            && code[globalPos + 1] == '/'))
                     {
-                        if (code[globalPos] == '\n') currentLine++;
                         globalPos++;
                     }
 
                     if (globalPos >= code.Length)
                     {
-                        tokens.Add(new Token
-                        {
-                            Type = TokenType.Error,
-                            Value = "Незакрытый комментарий",
-                            Line = commentLine,
-                            Column = commentColumn
-                        });
                         break;
                     }
-
-                    string commentContent = code.Substring(commentStart, globalPos - commentStart + 2);
-                    tokens.Add(new Token
-                    {
-                        Type = TokenType.Comment,
-                        Value = commentContent,
-                        Line = commentLine,
-                        Column = commentColumn
-                    });
 
                     globalPos += 2;
                     continue;
@@ -79,40 +58,110 @@ namespace ModelLanguageCompiler.ViewModel
                 if (tokenMatch.Success)
                 {
                     string value = tokenMatch.Groups[1].Value;
-                    int column = GetColumnNumber(code, globalPos, currentLine);
-
                     Token token = new Token
                     {
-                        Value = value,
-                        Line = currentLine,
-                        Column = column
+                        Value = value
                     };
 
-                    if (Array.Exists(keywords, k => k == value) || Array.Exists(types, t => t == value))
+                    if (Array.Exists(Lexer.keywords, k => k == value) || Array.Exists(Lexer.types, t => t == value))
+                    {
                         token.Type = TokenType.Keyword;
+                        if (GetKeywords().Contains(value))
+                        {
+                            token.Index = KeywordIndex;
+                            token.TableIndex = GetKeywords().IndexOf(value) + 1;
+                        }
+                        else
+                        {
+                            token.Index = DelimitersIndex;
+                            token.TableIndex = GetDelimiters().IndexOf(value) + 1;
+                        }
+                    }
                     else if (Array.Exists(logicalConstants, c => c == value))
+                    {
                         token.Type = TokenType.LogicalConstant;
+                        token.Index = KeywordIndex;
+                        token.TableIndex = GetKeywords().IndexOf(value) + 1;
+                    }
                     else if (Regex.IsMatch(value, @"^\d+(\.\d+)?$"))
+                    {
                         token.Type = TokenType.Number;
+                        token.Index = NumberIndex;
+                        if (!numbers.Contains(value))
+                        {
+                            numbers.Add(value);
+                        }
+                        token.TableIndex = numbers.IndexOf(value) + 1;
+                    }
                     else if (hexNumberRegex.IsMatch(value))
-                        token.Type = TokenType.HexNumber;
+                    {
+                        token.Type = TokenType.Number;
+                        token.Index = NumberIndex;
+                        if (!numbers.Contains(value))
+                        {
+                            numbers.Add(value);
+                        }
+                        token.TableIndex = numbers.IndexOf(value) + 1;
+                    }
+                    else if (binaryNumberRegex.IsMatch(value))
+                    {
+                        token.Type = TokenType.Number;
+                        token.Index = NumberIndex;
+                        if (!numbers.Contains(value))
+                        {
+                            numbers.Add(value);
+                        }
+                        token.TableIndex = numbers.IndexOf(value) + 1;
+                    }
+                    else if (octNumberRegex.IsMatch(value))
+                    {
+                        token.Type = TokenType.Number;
+                        token.Index = NumberIndex;
+                        if (!numbers.Contains(value))
+                        {
+                            numbers.Add(value);
+                        }
+                        token.TableIndex = numbers.IndexOf(value) + 1;
+                    }
+                    else if (decNumberRegex.IsMatch(value))
+                    {
+                        token.Type = TokenType.Number;
+                        token.Index = NumberIndex;
+                        if (!numbers.Contains(value))
+                        {
+                            numbers.Add(value);
+                        }
+                        token.TableIndex = numbers.IndexOf(value) + 1;
+                    }
                     else if (Regex.IsMatch(value, operatorsPattern))
+                    {
                         token.Type = TokenType.Operator;
+                        token.Index = DelimitersIndex;
+                        token.TableIndex = GetDelimiters().IndexOf(value) + 1;
+                    }
                     else if (Regex.IsMatch(value, delimitersPattern))
+                    {
                         token.Type = TokenType.Delimiter;
+                        token.Index = DelimitersIndex;
+                        token.TableIndex = GetDelimiters().IndexOf(value) + 1;
+                    }
                     else if (Regex.IsMatch(value, "^[a-zA-Z_][a-zA-Z0-9_]*$"))
+                    {
                         token.Type = TokenType.Identifier;
+                        token.Index = IdsIndex;
+                        if (!ids.Contains(value))
+                        {
+                            ids.Add(value);
+                        }
+                        token.TableIndex = ids.IndexOf(value) + 1;
+                    }
                     else
+                    {
                         token.Type = TokenType.Error;
+                    }
 
                     tokens.Add(token);
                     globalPos += value.Length;
-
-                    int newlines = value.Count(c => c == '\n');
-                    if (newlines > 0)
-                    {
-                        currentLine += newlines;
-                    }
                 }
                 else
                 {
@@ -123,10 +172,28 @@ namespace ModelLanguageCompiler.ViewModel
             return tokens;
         }
 
-        private int GetColumnNumber(string code, int position, int currentLine)
+        public static List<string> GetKeywords()
         {
-            int lineStart = code.LastIndexOf('\n', position);
-            return lineStart == -1 ? position + 1 : position - lineStart;
+            var result = new List<string>(keywords);
+            result.AddRange(logicalConstants);
+            return result;
         }
+
+        public static List<string> GetDelimiters()
+        {
+            var delimiters = new List<string> { "{", "}", "(", ")", ";", "," };
+            var operators = new List<string> { "!=", "==", "<=", ">=", "||", "&&", ":=", "+", "-", "*", "/", "<", ">", "=" };
+
+            var result = new List<string>(delimiters);
+            result.AddRange(operators);
+            result.AddRange(Lexer.types);
+            return result;
+        }
+
+        private static int KeywordIndex => 1;
+        private static int DelimitersIndex => 2;
+        private static int NumberIndex => 3;
+        private static int IdsIndex => 4;
+
     }
 }

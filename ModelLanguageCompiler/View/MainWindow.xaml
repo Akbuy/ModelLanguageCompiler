@@ -13,10 +13,10 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <GroupBox Header="Исходный код" Grid.Column="0" Grid.Row="0" Margin="5">
-        <RichTextBox Name="CodeInputBox" Grid.Column="0" Grid.Row="0" FontFamily="Consolas" FontSize="14" AcceptsTab="True" VerticalScrollBarVisibility="Auto" />
+        <GroupBox Header="Поле для ввода" Grid.Column="0" Grid.Row="0" Margin="5">
+            <RichTextBox Name="CodeInputBox" Grid.Column="0" Grid.Row="0" FontFamily="Consolas" FontSize="14" AcceptsTab="True" VerticalScrollBarVisibility="Auto" />
         </GroupBox>
-        
+
         <GroupBox Header="Лексемы" Grid.Column="1" Grid.Row="0" Margin="5">
             <ListBox Name="TokensList" FontFamily="Consolas" FontSize="12" />
         </GroupBox>
@@ -26,6 +26,8 @@
              IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
         </GroupBox>
 
-        <Button Content="Анализировать" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Height="40" Margin="5" FontSize="14" Click="Analyze_Click" HorizontalAlignment="Stretch" />
+        <Button Content="Таблицы" Grid.Row="1" Grid.Column="0" Height="40" Margin="5" FontSize="14" Click="Tables_Click" HorizontalAlignment="Stretch" />
+        <Button Content="Очистить" Grid.Row="1" Grid.Column="1" Height="40" Margin="5" FontSize="14" Click="Clear_Click" HorizontalAlignment="Stretch" />
+        <Button Content="Анализировать" Grid.Row="1" Grid.Column="2" Height="40" Margin="5" FontSize="14" Click="Analyze_Click" HorizontalAlignment="Stretch" />
     </Grid>
 </Window>
